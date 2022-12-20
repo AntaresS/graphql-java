@@ -36,6 +36,7 @@ import java.util.function.BiFunction;
 /**
  * This can parse graphql syntax, both Query syntax and Schema Definition Language (SDL) syntax, into an
  * Abstract Syntax Tree (AST) represented by a {@link Document}
+ * test test
  * <p>
  * You should not generally need to call this class as the {@link graphql.GraphQL} code sets this up for you
  * but if you are doing specific graphql utilities this class is essential.
@@ -254,16 +255,25 @@ public class Parser {
     }
 
     private Node<?> parseImpl(ParserEnvironment environment, BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction) throws InvalidSyntaxException {
+        // default in the parser options if they are not set
+        ParserOptions parserOptions = environment.getParserOptions();
+        parserOptions = Optional.ofNullable(parserOptions).orElse(ParserOptions.getDefaultParserOptions());
+
         MultiSourceReader multiSourceReader;
         Reader reader = environment.getDocument();
         if (reader instanceof MultiSourceReader) {
             multiSourceReader = (MultiSourceReader) reader;
         } else {
             multiSourceReader = MultiSourceReader.newMultiSourceReader()
-                    .reader(reader, null).build();
+                    .reader(reader, null)
+                    .reader(reader, null)
+                    .trackData(parserOptions.isReaderTrackData())
+                    .build();
+                    .build();
         }
         CodePointCharStream charStream;
         try {
+            charStream = CharStreams.fromReader(multiSourceReader);
             charStream = CharStreams.fromReader(multiSourceReader);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -289,10 +299,6 @@ public class Parser {
                 throw new InvalidSyntaxException(msg, sourceLocation, null, preview, null);
             }
         });
-
-        // default in the parser options if they are not set
-        ParserOptions parserOptions = environment.getParserOptions();
-        parserOptions = Optional.ofNullable(parserOptions).orElse(ParserOptions.getDefaultParserOptions());
 
         // this lexer wrapper allows us to stop lexing when too many tokens are in place.  This prevents DOS attacks.
         int maxTokens = parserOptions.getMaxTokens();
